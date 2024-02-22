@@ -1,8 +1,8 @@
 # Security Incubator 1 Sprint Requirements 
 
 # Forking instrucitons(For Team Lead)
-- [ ] Fork the repository to your own account
-- [ ] Add the students as collaborators to the repository
+- [x] Fork the repository to your own account
+- [x] Add the students as collaborators to the repository
 - [ ] bootstrap flux
 - [ ] create cluster 
 
