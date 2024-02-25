@@ -3,8 +3,8 @@
 # Forking instrucitons(For Team Lead)
 - [x] Fork the repository to your own account
 - [x] Add the students as collaborators to the repository
-- [ ] bootstrap flux
-- [ ] create cluster 
+- [ ] bootstrap flux || Argo
+- [x] create cluster 
 
 # 👩‍💼 Scenario:
 You are part of the DevOps team at CryptoSecure, a fast-growing startup specializing in blockchain technology and cryptocurrency solutions. CryptoSecure has been gaining attention in the market for its innovative approaches to secure transactions and wallet management. However, with the rise in cyber threats, especially in the cryptocurrency domain, there's an increasing need to bolster the security of your infrastructure and deployment pipeline.
