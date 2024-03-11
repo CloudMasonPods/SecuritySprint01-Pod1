@@ -54,4 +54,13 @@ Password: Retrieve the admin password by executing the command:
   echo Password: $(kubectl get secret --namespace harbor harbor-core-envvars -o jsonpath="{.data.HARBOR_ADMIN_PASSWORD}" | base64 -d)
   ```
 
+Create a project on harbor
+check for your docker image
+tag the image first
+ a. docker tag <image name> cookieclicker.gm-nig-ltd.tech/k8s_ethereum_bloc/<image name>
 
+b. docker images
+
+c. docker push cookieclicker.gm-nig-ltd.tech/k8s_ethereum_bloc/<image name>
+
+publish the image to harbor
