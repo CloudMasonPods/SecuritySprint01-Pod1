@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ethereum-ingress
+  namespace: ethereum-deployment
+  annotations:
+    kubernetes.io/ingress.class: "nginx"  # Or another class if you use a different Ingress Controller
+    cert-manager.io/cluster-issuer: "acme-issuer"  # Name of your ClusterIssuer
+spec:
+  tls:
+  - hosts:
+    - ethereum.gm-nig-ltd.tech
+    secretName: ethereum-secret  # The secret where cert-manager will store the certificate
+  rules:
+  - host: ethereum.gm-nig-ltd.tech
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: harbor  # Replace with your service name
+            port:
+              number: 80  # Replace with your service port
