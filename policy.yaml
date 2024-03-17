@@ -25,7 +25,7 @@ spec:
       # Verify images against specified conditions and attestations
       verifyImages:
         # Specify image references to verify (all images in this case)
-        - ImageReferences:
+        - imageReferences:
             - "*"
           # Define attestation type and conditions for image verification
           attestations:

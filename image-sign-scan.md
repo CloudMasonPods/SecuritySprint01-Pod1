@@ -114,6 +114,8 @@ The provided commands set up Kyverno and its policies, allowing you to manage an
     helm repo update
     helm install kyverno-policies kyverno/kyverno-policies -n kyverno
     cat cosign.pub
+
+    cosign verify --key cosign.pub ethereum.gm-nig-ltd.tech/eth-project/my-ethereum-app@sha256:2b918f9ef3763ca571faebea27607096864a196d32c71d4f8ceaf6f27c387d22
      ```
 Create a policy.yaml file
 
