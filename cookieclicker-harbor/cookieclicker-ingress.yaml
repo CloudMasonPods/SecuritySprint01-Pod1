@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: harbor
+  annotations: 
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ethereum.gm-nig-ltd.tech
+    secretName: harbor-tls-ingress # must match the name of the certificate secretName we issued
+  rules:
+  - host: ethereum.gm-nig-ltd.tech
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: harbor
+            port:
+              number: 80  # port pointing to the port on the service and not the targetPort
+  - host: ethereum.gm-nig-ltd.tech
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: harbor
+            port:
+              number: 443
