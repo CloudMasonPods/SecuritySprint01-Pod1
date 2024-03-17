@@ -1,0 +1,95 @@
+
+d53e5700231f (alpine 3.16.2)
+============================
+Total: 20 (UNKNOWN: 0, LOW: 0, MEDIUM: 12, HIGH: 8, CRITICAL: 0)
+
+┌──────────────┬───────────────┬──────────┬────────┬───────────────────┬───────────────┬─────────────────────────────────────────────────────────────┐
+│   Library    │ Vulnerability │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                            │
+├──────────────┼───────────────┼──────────┼────────┼───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ libcrypto1.1 │ CVE-2022-4450 │ HIGH     │ fixed  │ 1.1.1q-r0         │ 1.1.1t-r0     │ openssl: double free after calling PEM_read_bio_ex          │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-4450                   │
+│              ├───────────────┤          │        │                   │               ├─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0215 │          │        │                   │               │ openssl: use-after-free following BIO_new_NDEF              │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0215                   │
+│              ├───────────────┤          │        │                   │               ├─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0286 │          │        │                   │               │ openssl: X.400 address type confusion in X.509 GeneralName  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0286                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0464 │          │        │                   │ 1.1.1t-r1     │ openssl: Denial of service by excessive resource usage in   │
+│              │               │          │        │                   │               │ verifying X509 policy...                                    │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0464                   │
+│              ├───────────────┼──────────┤        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2022-4304 │ MEDIUM   │        │                   │ 1.1.1t-r0     │ openssl: timing attack in RSA Decryption implementation     │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-4304                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0465 │          │        │                   │ 1.1.1t-r2     │ openssl: Invalid certificate policies in leaf certificates  │
+│              │               │          │        │                   │               │ are silently ignored                                        │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0465                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-2650 │          │        │                   │ 1.1.1u-r0     │ openssl: Possible DoS translating ASN.1 object identifiers  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-2650                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-3446 │          │        │                   │ 1.1.1u-r2     │ openssl: Excessive time spent checking DH keys and          │
+│              │               │          │        │                   │               │ parameters                                                  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-3446                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-3817 │          │        │                   │ 1.1.1v-r0     │ OpenSSL: Excessive time spent checking DH q parameter value │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-3817                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-5678 │          │        │                   │ 1.1.1w-r1     │ openssl: Generating excessively long X9.42 DH keys or       │
+│              │               │          │        │                   │               │ checking excessively long X9.42...                          │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-5678                   │
+├──────────────┼───────────────┼──────────┤        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│ libssl1.1    │ CVE-2022-4450 │ HIGH     │        │                   │ 1.1.1t-r0     │ openssl: double free after calling PEM_read_bio_ex          │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-4450                   │
+│              ├───────────────┤          │        │                   │               ├─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0215 │          │        │                   │               │ openssl: use-after-free following BIO_new_NDEF              │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0215                   │
+│              ├───────────────┤          │        │                   │               ├─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0286 │          │        │                   │               │ openssl: X.400 address type confusion in X.509 GeneralName  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0286                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0464 │          │        │                   │ 1.1.1t-r1     │ openssl: Denial of service by excessive resource usage in   │
+│              │               │          │        │                   │               │ verifying X509 policy...                                    │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0464                   │
+│              ├───────────────┼──────────┤        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2022-4304 │ MEDIUM   │        │                   │ 1.1.1t-r0     │ openssl: timing attack in RSA Decryption implementation     │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-4304                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-0465 │          │        │                   │ 1.1.1t-r2     │ openssl: Invalid certificate policies in leaf certificates  │
+│              │               │          │        │                   │               │ are silently ignored                                        │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-0465                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-2650 │          │        │                   │ 1.1.1u-r0     │ openssl: Possible DoS translating ASN.1 object identifiers  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-2650                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-3446 │          │        │                   │ 1.1.1u-r2     │ openssl: Excessive time spent checking DH keys and          │
+│              │               │          │        │                   │               │ parameters                                                  │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-3446                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-3817 │          │        │                   │ 1.1.1v-r0     │ OpenSSL: Excessive time spent checking DH q parameter value │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-3817                   │
+│              ├───────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│              │ CVE-2023-5678 │          │        │                   │ 1.1.1w-r1     │ openssl: Generating excessively long X9.42 DH keys or       │
+│              │               │          │        │                   │               │ checking excessively long X9.42...                          │
+│              │               │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-5678                   │
+└──────────────┴───────────────┴──────────┴────────┴───────────────────┴───────────────┴─────────────────────────────────────────────────────────────┘
+
+Node.js (node-pkg)
+==================
+Total: 3 (UNKNOWN: 0, LOW: 0, MEDIUM: 2, HIGH: 1, CRITICAL: 0)
+
+┌─────────────────────────────────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────────┬────────────────────────────────────────────────────────────┐
+│               Library               │ Vulnerability  │ Severity │ Status │ Installed Version │    Fixed Version    │                           Title                            │
+├─────────────────────────────────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────────┼────────────────────────────────────────────────────────────┤
+│ http-cache-semantics (package.json) │ CVE-2022-25881 │ HIGH     │ fixed  │ 4.1.0             │ 4.1.1               │ http-cache-semantics: Regular Expression Denial of Service │
+│                                     │                │          │        │                   │                     │ (ReDoS) vulnerability                                      │
+│                                     │                │          │        │                   │                     │ https://avd.aquasec.com/nvd/cve-2022-25881                 │
+├─────────────────────────────────────┼────────────────┼──────────┤        ├───────────────────┼─────────────────────┼────────────────────────────────────────────────────────────┤
+│ ip (package.json)                   │ CVE-2023-42282 │ MEDIUM   │        │ 1.1.8             │ 2.0.1, 1.1.9        │ nodejs-ip: arbitrary code execution via the isPublic()     │
+│                                     │                │          │        │                   │                     │ function                                                   │
+│                                     │                │          │        │                   │                     │ https://avd.aquasec.com/nvd/cve-2023-42282                 │
+├─────────────────────────────────────┼────────────────┤          │        ├───────────────────┼─────────────────────┼────────────────────────────────────────────────────────────┤
+│ semver (package.json)               │ CVE-2022-25883 │          │        │ 7.3.7             │ 7.5.2, 6.3.1, 5.7.2 │ nodejs-semver: Regular expression denial of service        │
+│                                     │                │          │        │                   │                     │ https://avd.aquasec.com/nvd/cve-2022-25883                 │
+└─────────────────────────────────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────────┴────────────────────────────────────────────────────────────┘

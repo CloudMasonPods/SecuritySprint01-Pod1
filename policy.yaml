@@ -1,0 +1,89 @@
+# Define a Kyverno ClusterPolicy to enforce Docker image scan requirements
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  # Name of the policy
+  name: enforce-docker-image-scan
+spec:
+  # Define the action to take on validation failure
+  validationFailureAction: Enforce
+  # Disable background execution of the policy
+  background: false
+  # Timeout for the webhook execution
+  webhookTimeoutSeconds: 30
+  # Failure policy for the webhook
+  failurePolicy: Fail
+  # List of rules for enforcing image scan requirements
+  rules:
+    # Rule enforcing Docker image age
+    - name: enforce-image-age
+      # Match resources of kind Pod
+      match:
+        resources:
+          kinds:
+            - Pod
+      # Verify images against specified conditions and attestations
+      verifyImages:
+        # Specify image references to verify (all images in this case)
+        - ImageReferences:
+            - "*"
+          # Define attestation type and conditions for image verification
+          attestations:
+            - type: https://cosign.sigstore.dev/attestation/vuln/v1
+              # Define conditions for image age (less than or equal to 1 hour)
+              conditions:
+                - all:
+                    - key: "{{ time_since('','{{ metadata.scanFinishedOn }}', '') }}"
+                      operator: LessThanOrEquals
+                      value: "1h"
+              # Define attestation requirements (1 attestor with public key)
+              attestors:
+                - count: 1
+                  entries:
+                    - keys:
+                        # Specify the public key used for attestation
+                        publicKeys: |-
+                          -----BEGIN PUBLIC KEY-----
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEahhd+8EkNBaRExZ8YT14oI/3X04t
+                          IQHVCDs0FRcGdnZjAPBJbGaICiST2Ii60sjq0GKd9F/Wdg27oEud1eTIaw==
+                          -----END PUBLIC KEY-----
+    # Rule enforcing Docker image signature
+    # - name: enforce-image-signature
+    #   # Match resources of kind Pod
+    #   match:
+    #     resources:
+    #       kinds:
+    #         - Pod
+    #   # Validate image signatures
+    #   validate:
+    #     message: "Docker images must be signed with a Cosign public key."
+    #     pattern:
+    #       spec:
+    #         containers:
+    #           - image: 
+    #               pattern: ".*"
+    #               message: "Docker image must be signed with a Cosign public key."
+    #   background: false
+    #   matchResources:
+    #     excludedNamespaces:
+    #       - kube-system
+    # # Rule enforcing Docker image attestation
+    # - name: enforce-attestation
+    #   # Match resources of kind Pod
+    #   match:
+    #     resources:
+    #       kinds:
+    #         - Pod
+    #   # Validate image attestations
+    #   validate:
+    #     message: "Docker images must have a valid attestation."
+    #     pattern:
+    #       spec:
+    #         containers:
+    #           - image: 
+    #               pattern: ".*"
+    #               message: "Docker image must have a valid attestation."
+    #   background: false
+    #   matchResources:
+    #     excludedNamespaces:
+    #       - kube-system
