@@ -1,6 +1,6 @@
 # Define a Kyverno ClusterPolicy to enforce Docker image scan requirements
 apiVersion: kyverno.io/v1
-kind: Policy
+kind: ClusterPolicy
 metadata:
   # Name of the policy
   name: enforce-docker-image-scan
