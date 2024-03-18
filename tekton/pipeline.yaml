@@ -1,0 +1,27 @@
+# pipeline-git-clone.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: git-clone-pipeline
+  namespace: tekton-cicd
+spec:
+  params:
+  - name: git-url
+    type: string
+  - name: git-revision
+    type: string
+    default: main
+  workspaces:
+  - name: shared-data
+  tasks:
+  - name: fetch-repository
+    taskRef: #refrence task 
+      name: git-clone
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.git-revision)
+    workspaces:
+    - name: output
+      workspace: shared-data

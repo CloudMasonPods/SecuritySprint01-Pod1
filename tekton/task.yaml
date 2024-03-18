@@ -1,0 +1,23 @@
+# task-git-clone.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: tekton-cicd
+spec:
+  params:
+  - name: url
+    type: string
+  - name: revision
+    type: string
+    default: main
+  workspaces:
+  - name: output
+    description: The git repo will be cloned onto the volume backing this workspace
+  steps:
+  - name: clone
+    image: alpine/git
+    script: |
+      git clone $(params.url) $(workspaces.output.path)/repo
+      cd $(workspaces.output.path)/repo
+      git checkout $(params.revision)

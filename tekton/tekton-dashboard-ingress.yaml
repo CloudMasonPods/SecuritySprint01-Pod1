@@ -1,26 +1,25 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ethereum
+  name: tekton-dashboard
   annotations: 
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
-    ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - ethblock.gm-nig-ltd.tech
-    secretName: ethblock-tls-ingress # must match the name of the certificate secretName we issue
+    - tekton.gm-nig-ltd.tech
+    secretName: harbor-tls-ingress
   rules:
-  - host: ethblock.gm-nig-ltd.tech
+  - host: tekton.gm-nig-ltd.tech
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: ethstats 
+            name: tekton-dashboard  
             port:
-              number: 3000  # port pointing to the port on the service and not the targetPort
+              number: 9097  # port pointing to the port on the service and not the targetPort
               

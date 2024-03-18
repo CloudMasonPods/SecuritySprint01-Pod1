@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
     - ethereum.gm-nig-ltd.tech
-    secretName: harbor-tls-ingress # must match the name of the certificate secretName we issued
+    secretName: harbor-tls-ingress 
   rules:
   - host: ethereum.gm-nig-ltd.tech
     http:
