@@ -23,5 +23,5 @@ spec:
     - name: revision
       value: $(params.git-revision)
     workspaces:
-    - name: output
+    - name: source  #workspace where the cloned repo its stored
       workspace: shared-data

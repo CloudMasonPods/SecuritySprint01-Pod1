@@ -1,0 +1,15 @@
+# taskrun-build-dockerfile.yaml
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: build-dockerfile-test
+  namespace: tekton-cicd
+spec:
+  taskRef:
+    name: build-dockerfile
+  params:
+  - name: image-name
+    value:  ethereum.gm-nig-ltd.tech/eth-project/eth-project/my-ethereum-app:test
+  workspaces:
+  - name: source
+    emptyDir: {}

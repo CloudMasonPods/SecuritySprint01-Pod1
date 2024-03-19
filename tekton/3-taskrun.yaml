@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: build-dockerfile-taskrun
+  namespace: tekton-cicd
+spec:
+  taskRef:
+    name: build-dockerfile
+  params:
+  - name: image-name
+    value: eth-test-tekton
+  workspaces:
+  - name: source-build-workspace-2
+    persistentVolumeClaim:
+      claimName: pvc-96573cc7e9

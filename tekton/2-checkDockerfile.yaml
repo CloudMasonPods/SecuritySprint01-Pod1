@@ -1,0 +1,21 @@
+# task-check-dockerfile.yaml
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: check-dockerfile
+  namespace: tekton-cicd
+spec:
+  params: []
+  workspaces:
+  - name: source
+    description: The workspace containing the cloned Git repository
+  steps:
+  - name: check-dockerfile
+    image: alpine/git
+    script: |
+      if [ -f "$(workspaces.source.path)/repo/Dockerfile" ]; then
+        echo "Dockerfile exists"
+      else
+        echo "Dockerfile does not exist"
+        exit 1
+      fi

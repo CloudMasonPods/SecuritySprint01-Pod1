@@ -12,12 +12,12 @@ spec:
     type: string
     default: main
   workspaces:
-  - name: output
+  - name: source
     description: The git repo will be cloned onto the volume backing this workspace
   steps:
   - name: clone
     image: alpine/git
     script: |
-      git clone $(params.url) $(workspaces.output.path)/repo
-      cd $(workspaces.output.path)/repo
+      git clone $(params.url) $(workspaces.source.path)/repo
+      cd $(workspaces.source.path)/repo
       git checkout $(params.revision)

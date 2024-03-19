@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: sign-docker-image
+  namespace: tekton-cicd
+spec:
+  workspaces:
+  - name: source
+    description: The workspace containing the Docker image to be signed
+  volumes:
+  - name: cosign-key
+    secret:
+      secretName: cosign-key-secret  # Replace with your secret name
+  steps:
+  - name: sign-image
+    image: gcr.io/projectsigstore/cosign
+    command:
+    - cosign
+    args:
+    - sign
+    - -key=/tekton/home/cosign/cosign.key
+    - $(workspaces.source.path)/$(params.image-name)
+    volumeMounts:
+    - name: cosign-key
+      mountPath: /tekton/home/cosign
+
+      

@@ -1,0 +1,14 @@
+# taskrun-check-dockerfile.yaml
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: check-dockerfile-run
+  namespace: tekton-cicd
+spec:
+  taskRef:
+    name: check-dockerfile
+  workspaces:
+  - name: source
+    persistentVolumeClaim:
+      claimName: pvc-96573cc7e9  # Name of the PVC where the cloned repository is stored this can be gottten by scanning the namespaqce for a pvc
+      

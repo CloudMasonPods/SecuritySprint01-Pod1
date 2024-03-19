@@ -1,0 +1,16 @@
+# taskrun-trivy-scan.yaml
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: sign-docker-image-run
+  namespace: tekton-cicd
+spec:
+  taskRef:
+    name: sign-docker-image
+  params:
+    - name: image-name
+      value: gcr.io/projectsigstore/cosign
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: pvc-96573cc7e9

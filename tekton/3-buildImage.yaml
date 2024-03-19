@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-dockerfile
+  namespace: tekton-cicd
+spec:
+  params:
+  - name: image-name
+    type: string
+    description: The name of the image to build
+  workspaces:
+  - name: source-build-workspace-2  # Changed workspace name to ensure uniqueness
+    description: The workspace containing the cloned Git repository for building
+  steps:
+  - name: build
+    image: gcr.io/kaniko-project/executor:latest
+    env:
+    - name: DOCKER_CONFIG
+      value: /kaniko/.docker
+    command:
+    - /kaniko/executor
+    - --dockerfile=/workspace/source-build-workspace-2/repo/Dockerfile  # Updated volume mount path
+    - --context=/workspace/source-build-workspace-2
+    - --destination=$(params.image-name)
+    - --no-push
