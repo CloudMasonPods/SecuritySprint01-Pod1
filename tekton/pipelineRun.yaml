@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: git-clone-pipeline-run
+  generateName: git-clone-pipeline-run
   namespace: tekton-cicd
 spec:
   pipelineRef:

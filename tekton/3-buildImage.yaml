@@ -49,9 +49,9 @@ spec:
         - /kaniko/executor
         - --insecure
         - --skip-tls-verify
-        - --dockerfile=/workspace/source-build-workspace-2/repo/Dockerfile
-        - --context=/workspace/source-build-workspace-2
-        - --destination=$(params.registry-url)/eth-project/$(params.image-name)
+        - --dockerfile=/workspace/source/repo/Dockerfile
+        - --context=/workspace/source
+        - --destination=$(params.registry-url)/$(params.image-name)
       volumeMounts:
         - name: config-json #mount the volume i.e the name of the secrte to kaniko
           mountPath: /kaniko/.docker
