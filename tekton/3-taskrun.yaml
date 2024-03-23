@@ -12,4 +12,4 @@ spec:
   workspaces:
   - name: source-build-workspace-2
     persistentVolumeClaim:
-      claimName: pvc-96573cc7e9
+      claimName: pvc-7b3c512466

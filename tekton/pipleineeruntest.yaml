@@ -1,0 +1,42 @@
+# # pipelinerun-git-clone.yaml
+# apiVersion: tekton.dev/v1beta1
+# kind: PipelineRun
+# metadata:
+#   name: git-clone-pipeline-run
+#   namespace: tekton-cicd
+# spec:
+#   pipelineRef:
+#     name: git-clone-pipeline
+#   params:
+#     - name: git-url
+#       value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+#     - name: git-revision
+#       value: main
+#     - name: image-name
+#       value: eth-test-tekton
+#   workspaces:
+#     - name: shared-data
+#       persistentVolumeClaim:
+#         claimName: tektonpvc  # Specify the name of your PVC here
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: git-clone-pipeline-run
+  namespace: tekton-cicd
+spec:
+  pipelineRef:
+    name: git-clone-pipeline
+  params:
+    - name: git-url
+      value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+    - name: git-revision
+      value: main
+    - name: image-name
+      value: eth-project/eth-test-tekton:1
+    - name: registry-url
+      value: "ethereum.gm-nig-ltd.tech"
+  # serviceAccountName: tek-service-account
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: tektonpvc

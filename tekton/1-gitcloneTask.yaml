@@ -1,4 +1,52 @@
-# task-git-clone.yaml
+# # task-git-clone.yaml
+# apiVersion: tekton.dev/v1beta1
+# kind: Task
+# metadata:
+#   name: git-clone
+#   namespace: tekton-cicd
+# spec:
+#   params:
+#   - name: url
+#     type: string
+#   - name: revision
+#     type: string
+#     default: main
+#   workspaces:
+#   - name: source
+#     description: The git repo will be cloned onto the volume backing this workspace
+#   steps:
+#   - name: clone
+#     image: alpine/git
+#     script: |
+#       git clone $(params.url) $(workspaces.source.path)/repo
+#       cd $(workspaces.source.path)/repo
+#       git checkout $(params.revision)
+
+# apiVersion: tekton.dev/v1beta1
+# kind: Task
+# metadata:
+#   name: git-clone
+#   namespace: tekton-cicd
+# spec:
+#   params:
+#     - name: url
+#       type: string
+#     - name: revision
+#       type: string
+#       default: main
+#   workspaces:
+#     - name: source
+#       description: The git repo will be cloned onto the volume backing this workspace
+#   steps:
+#     - name: clone
+#       image: alpine/git
+#       script: |
+#         if [ -d "$(workspaces.source.path)/repo" ]; then
+#           rm -rf "$(workspaces.source.path)/repo" || exit 1
+#         fi
+#         git clone $(params.url) $(workspaces.source.path)/repo
+#         cd $(workspaces.source.path)/repo
+#         git checkout $(params.revision)
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -6,18 +54,29 @@ metadata:
   namespace: tekton-cicd
 spec:
   params:
-  - name: url
-    type: string
-  - name: revision
-    type: string
-    default: main
+    - name: url
+      type: string
+    - name: revision
+      type: string
+      default: main
+  results:
+    - description: The precise commit SHA fetched by this task
+      name: commit
   workspaces:
-  - name: source
-    description: The git repo will be cloned onto the volume backing this workspace
+    - name: source
+      description: The git repo will be cloned onto the volume backing this workspace
   steps:
-  - name: clone
-    image: alpine/git
-    script: |
-      git clone $(params.url) $(workspaces.source.path)/repo
-      cd $(workspaces.source.path)/repo
-      git checkout $(params.revision)
+    - name: clone
+      image: alpine/git
+      script: |
+        # check if repo previous cloned if yes delete the repo and clone new one
+        if [ -d "$(workspaces.source.path)/repo" ]; then
+          rm -rf "$(workspaces.source.path)/repo" || exit 1
+        fi
+        # clone git repo into source workspace
+        git clone $(params.url) $(workspaces.source.path)/repo
+        cd $(workspaces.source.path)/repo
+        #Save Git Commit's Short Sha and push it to the results
+        RESULT_SHA="$(git rev-parse HEAD)"
+        printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+        git checkout $(params.revision)

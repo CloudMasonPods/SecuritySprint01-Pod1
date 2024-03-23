@@ -5,7 +5,7 @@ Tekton is a powerful and flexible framework for creating continuous integration 
 1. Pipeline: Pipelines in Tekton are a series of tasks that define a CI/CD workflow. They outline the steps your code needs to go through from source code to deployment. Pipelines are defined using YAML manifests.
 
 
-2. PipelineResource: PipelineResources in Tekton represent external resources that pipelines interact with during their execution. They abstract inputs or outputs of pipeline stages, such as source code repositories, Docker images, or configuration files. PipelineResources define the type, parameters, and name of the associated external resources, enabling flexibility and reusability in CI/CD workflows.(For example, if you have a pipeline that needs to build a Dockerfile from source code stored in a Git repository and then push the resulting image to a Docker registry, you might define two PipelineResources: one representing the Git repository and another representing the Docker registry. These resources would then be referenced by the tasks within the pipeline to fetch the source code and push the image, respectively.)
+2. PipelineResource: PipelineResources in Tekton represent external resources that pipelines interact with during their execution. They abstract inputs or outputs of pipeline stages, such as source code repositories, Docker images, or configuration files. PipelineResources define the type, parameters, and name of the associated external resources, enabling flexibility and reusability in CI/CD workflows.
 
 3. Tasks: Tasks are the smallest building blocks in Tekton. They represent a single unit of work in a pipeline, such as building code, running tests, or deploying applications. Tasks are reusable and can be combined to form more complex pipelines.
 
@@ -77,7 +77,7 @@ cosign generate-key-pair
 
 ```
 
-4. Create a generic kubernetes secretw with the Cosign private key:
+4. Create a generic kubernetes secret with the Cosign private key:
 secret name created : cosign-key
 secret type: generic
 ```
@@ -93,7 +93,7 @@ kubectl create secret generic cosign-key \
 5. Create Tekton tasks
     5a. First we create the task for the git clone 
 
-    ```
+```
 #task-git-clone.yaml
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -118,7 +118,7 @@ spec:
       cd $(workspaces.output.path)/repo
       git checkout $(params.revision)
     
-    ```
+```
 6. Create the Pipeline  that uses the git-clone task
 ```
 # pipeline-git-clone.yaml
@@ -177,7 +177,52 @@ spec:
             storage: 1Gi
 
 ```
-8. It is important to not the pvc bound to the namespace as that is where the cloned repo would be stored for the subsequent tasks
+8. It is important to note the pvc bound to the namespace , that is where the cloned repo would be stored for the subsequent tasks
 ```
 k get pvc -n tekton-cicd
+```
+
+
+### Tekton Chains
+This allows the signing of artifacts built from tekton and also production of provenance(which is an attestation that some entity[builder] in our case tekton produced one or more software artifacts byexcuting some invocationusing some other artifacts as input.this invocation runs a buildconfig which is a record of what was executed9process map showing input and process of building artifacts)
+
+#### To install chains
+```
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/chains/latest/release.yaml
+```
+
+tekton chain also assists in signing artifacts such as docker images built with tekton using cosign, kms etc.
+by simply using the command
+```
+cosign generate-key pair k8s://tekton-chains/signing-secrets
+```
+This helps to create the cosign private key,password and pub as a secret called signing-secrets (tekton chain expects the secret called signing-secrets) in tekton-chain namespace, in our case we have an existing cosign key ,pub and password so we need to migrate this existing data to tekton chain ns
+```
+kubectl create secret generic signing-secrets \
+  --from-file=/Users/Moyo/Desktop/Walter-security/cosign/cosign.key \
+  --from-file=/Users/Moyo/Desktop/secure-sc/SecuritySprint01-Pod1/cosign.pub\
+  --from-literal=cosign-password='your password' \
+  --namespace=tekton-chains
+
+```
+Next we need to modify configmap in tektonchain namespace to produce intoto format(slsa recognized format) used in generating provenance doc and store in the specified oci and tekton
+```
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.format": "in-toto"}}'
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.storage": "oci,tekton"}}'
+
+```
+
+Next we install sets of tekton buildpacks(template)tasks,pipleine  that helpt to build source into a container image using Cloud Native Buildpacks. To do that, it uses builders to run buildpacks against your application source.
+```
+#tasks
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.3/git-clone.yaml
+kubectl apply -f https://raw.githubusercontent.com/buildpacks/tekton-integration/main/task/buildpacks/0.4/buildpacks.yaml #tekton chain expect image url so we use this
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildpacks-phases/0.2/buildpacks-phases.yaml 
+
+```
+
+```
+#pipeline
+kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/pipeline/buildpacks/0.1/buildpacks.yaml
+
 ```

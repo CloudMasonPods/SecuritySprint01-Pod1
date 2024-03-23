@@ -8,16 +8,13 @@ spec:
   pipelineRef:
     name: git-clone-pipeline
   params:
-  - name: git-url
-    value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
-  - name: git-revision
-    value: main #if the git-revision is left blank the default from the task would then 
+    - name: git-url
+      value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+    - name: git-revision
+      value: main
+    - name: image-name
+      value: eth-test-tekton
   workspaces:
-  - name: shared-data
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: tektonpvc  # Specify the name of your PVC here

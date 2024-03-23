@@ -10,5 +10,5 @@ spec:
   workspaces:
   - name: source
     persistentVolumeClaim:
-      claimName: pvc-96573cc7e9  # Name of the PVC where the cloned repository is stored this can be gottten by scanning the namespaqce for a pvc
-      
+      claimName: pvc-7b3c512466   # Name of the PVC where the cloned repository is stored this can be gottten by scanning the namespaqce for a pvc
+
