@@ -1,0 +1,56 @@
+# API version and kind of the resource, indicating it's a Tekton Task
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  # Name and namespace of the Task
+  name: build-and-push-dockerfile
+  namespace: tekton-cicd
+spec:
+  # Parameters that can be passed to this Task at runtime
+  params:
+    - name: image-name
+      type: string
+      description: The name of the image to build and push
+    - name: registry-url
+      type: string
+      description: The URL of the private Harbor registry
+
+  # Workspaces define shared storage between steps in a Task or among Tasks in a Pipeline
+  workspaces:
+    - name: source
+      description: The workspace containing the cloned Git repository for building
+
+  # Steps are a series of commands executed in a container as part of the Task
+  steps:
+    - name: build-and-push
+      # The container image for this step is the Kaniko executor, used for building and pushing Docker images
+      image: gcr.io/kaniko-project/executor:latest
+      env:
+        # Sets the location where Kaniko expects to find Docker configuration files
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      command:
+        # The Kaniko executor command and arguments for building and pushing the Docker image
+        - /kaniko/executor
+        - --insecure # Allows pushing to a non-TLS or an untrusted TLS registry
+        - --skip-tls-verify # Skips TLS certificate verification
+        - --dockerfile=/workspace/source/repo/Dockerfile # Specifies the path to the Dockerfile
+        - --context=/workspace/source # Specifies the build context
+        # This line is commented out but would specify the image destination using parameters for the registry URL and image name
+        # - --destination=$(params.registry-url)/eth-project/$(params.image-name)
+        - --destination=$(params.registry-url)/ethereum/$(params.image-name)
+      # Mounts a volume containing Docker configuration files necessary for pushing the image
+      volumeMounts:
+        - name: docker-config # The name of the volume to mount
+          mountPath: /kaniko/.docker # The path in the container where the volume is mounted
+
+  # Defines volumes used by this Task
+  volumes:
+    - name: docker-config # The name of the volume
+      # This volume is backed by a Kubernetes secret containing Docker configuration for Kaniko
+      secret:
+        secretName: harbor-secret # The name of the Kubernetes secret
+        defaultMode: 256 # Sets the UNIX permissions for the files in the secret
+        items:
+        - key: .dockerconfigjson
+          path: config.json

@@ -2,3 +2,5 @@ civo-cohort-0securitypod-kubeconfig
 cosign.key
 tekton/harbor-secret.yaml
 tekton/tekton-dashboard-ingress.yaml
+docker_secret.yaml
+config_docker.json
