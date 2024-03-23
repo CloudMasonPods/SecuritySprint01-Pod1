@@ -226,3 +226,7 @@ kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/bu
 kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/pipeline/buildpacks/0.1/buildpacks.yaml
 
 ```
+
+kubectl apply -f pipelinetest.yaml
+kubectl apply -f pipelinetestrun.yaml
+kubectl apply -f teksecret.yaml

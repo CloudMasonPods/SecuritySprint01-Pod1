@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: git-clone-pipeline-run
+  namespace: tekton-cicd
+spec:
+  pipelineRef:
+    name: git-clone-pipeline
+  params:
+    - name: git-url
+      value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+    - name: git-revision
+      value: main
+    - name: image-name
+      value: my-ethereum-app:latest
+    - name: registry-url
+      # value: "ethereum.gm-nig-ltd.tech"
+      value: "docker.io/chukwuka1488"
+  # serviceAccountName: tek-service-account
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: tektonpvc
