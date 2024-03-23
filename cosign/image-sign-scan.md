@@ -23,7 +23,8 @@ FROM skylenet/ethstats-server:pow-latest
 By incorporating scanning and signing before pushing the image to Harbor, you ensure that the image is thoroughly checked for vulnerabilities and its integrity is verified before deployment.
 3. **Create a Project in Harbor**:
    - Before pushing an image, you need to create a corresponding project in the Harbor interface. If you haven't done this yet, follow the steps to create a project. Projects help organize your images within Harbor.
-project => private => eth-project
+project => private => **eth-project**
+
 4. **Log in to Harbor**:
    - Open your terminal or command prompt.
    - Use the following command to log in to your Harbor registry:
@@ -32,7 +33,7 @@ project => private => eth-project
      ```
      - You'll be prompted to enter your Docker registry username and password. Once authenticated, you'll be able to interact with your Harbor registry.
 
-(base) simplymenah@Efemenas-MacBook-Pro SecuritySprint01-Pod1 % docker login ethereum.gm-nig-ltd.tech
+(base) SecuritySprint01-Pod1 % docker login ethereum.gm-nig-ltd.tech
 Username: admin
 Password: Harbor12345
 Login Succeeded

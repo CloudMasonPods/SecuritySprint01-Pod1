@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
+    cert-manager.io/issuer: letsencrypt-prod  # Replace with your Cert-Manager issuer name
+spec:
+  tls:
+    - hosts:
+        - argo.gm-nig-ltd.tech  # Your desired DNS name
+      secretName: argocd-tls   # Secret name to store TLS certificate
+  rules:
+    - host: argocd.example.com   # Your desired DNS name
+      http:
+        paths:
+          - pathType: Prefix
+            path: /argo-cd
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443
+
