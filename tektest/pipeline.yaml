@@ -1,0 +1,59 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: image-build 
+  namespace: tektest
+spec:
+  tasks:
+  - name: git-clone
+    params:
+    - name: url
+      value:  https://github.com/cooktheryan/signing-blog.git
+    - name: revision
+      value: main
+    - name: submodules
+      value: "true"
+    - name: depth # retrieve the most recent commit 
+      value: "1"
+    - name: sslVerify
+      value: "true"
+    - name: deleteExisting
+      value: "true"
+    - name: verbose
+      value: "true"
+    - name: userHome
+      value: /tekton/home
+    taskRef:
+      kind: Task
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: build
+  - name: buildah
+    params:
+    - name: IMAGE
+      value: ethereum.gm-nig-ltd.tech/eth-project/ethsigning
+    - name: BUILDER_IMAGE #the builder image 
+      value: quay.io/buildah/stable:v1.23.3 
+    - name: STORAGE_DRIVER
+      value: vfs
+    - name: DOCKERFILE
+      value: image/Dockerfile
+    - name: CONTEXT
+      value: image/
+    - name: TAG
+      value: $(tasks.git-clone.results.commit)
+    - name: TLSVERIFY
+      value: "true"
+    - name: FORMAT
+      value: oci
+    runAfter:
+    - git-clone
+    taskRef:
+      kind: Task
+      name: buildah-commit-tag
+    workspaces:
+    - name: source
+      workspace: build
+  workspaces:
+  - name: build
