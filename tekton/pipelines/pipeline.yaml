@@ -1,4 +1,3 @@
- #pipeline-git-clone.yaml
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -13,7 +12,10 @@ spec:
       default: main
     - name: image-name
       type: string
-      description: The name of the image to build
+      description: The name of the image to build and push
+    - name: registry-url
+      type: string
+      description: The URL of the private Harbor registry
   workspaces:
     - name: shared-data
   tasks:
@@ -36,14 +38,19 @@ spec:
       workspaces:
         - name: source
           workspace: shared-data
-    - name: build-dockerfile
+    - name: build-and-push-dockerfile
       taskRef:
-        name: build-dockerfile
+        name: build-and-push-dockerfile
       runAfter:
         - check-dockerfile
       params:
         - name: image-name
           value: $(params.image-name)
+        - name: registry-url
+          value: $(params.registry-url)
+        - name: TAG
+          value: $(tasks.fetch-repository.results.commit)
       workspaces:
-        - name: source-build-workspace-2
+        - name: source
           workspace: shared-data
+      

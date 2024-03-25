@@ -58,12 +58,17 @@ Or install using helm.
 ```
 kubcetl create namespace tekton-cicd
 ```
-2. create a secret for container registry credentials(harbor)
+
+2. create service account for pushing and signing image
+```
+- k create sa -n tekton-cicd pipeline-sign
+```
+3. create a secret for container registry credentials(harbor)
 nb: secret of type docker-registry is used to create secret for all registry types.
 secret type: docker-registry
 secret name: registry-secret
 ```
-kubectl create secret docker-registry registry-secret \
+kubectl create secret docker-registry regcred \
   --docker-server=https://ethereum.gm-nig-ltd.tech\
   --docker-username=admin\
   --docker-password=<registry-password> \
@@ -71,113 +76,246 @@ kubectl create secret docker-registry registry-secret \
 
 ```
 
-3. generate a cosign key-pair(this assumes that we have cosign installed locally)
+4. Patch the servicee account to enable imagePullSecrets to authenticate with container image registries when pulling images during deployment or other operation
 ```
-cosign generate-key-pair
+kubectl patch serviceaccount pipeline-sign -n tekton-cicd  -p '{"imagePullSecrets": [{"name": "registrycredentials”}]}
 
 ```
 
-4. Create a generic kubernetes secret with the Cosign private key:
-secret name created : cosign-key
-secret type: generic
+5. Patch the service account to add the docker registry secret created above to the list of secrets associated with the service account (Now, even Chains also has push permissions for any TaskRuns running under the service account)
 ```
-kubectl create secret generic cosign-key \
-  --from-file=/Users/Moyo/Desktop/Walter-security/cosign/cosign.key\
-  --namespace=tekton-cicd
+kubectl patch serviceaccount pipeline-sign -n tekton-cicd  -p '{"secrets": [{"name": "registrycredentials"}]}'
 ```
 
-kubectl create secret generic cosign-key \
-  --from-file=path to cosign key \
-  --namespace=tekton-cicd
+6. Create Tekton tasks
+    6a. First we create the task for the git clone
 
-5. Create Tekton tasks
-    5a. First we create the task for the git clone 
+    ```
+      # Definition of a Tekton Task named git-clone
+          apiVersion: tekton.dev/v1beta1
+          kind: Task
+          metadata:
+            name: git-clone # Name of the task
+            namespace: tekton-cicd # Namespace where the task is located
+          spec:
+            params: # Parameters required by the task
+              - name: url
+                type: string
+              - name: revision
+                type: string
+                default: main # Default value for the revision parameter if not provided
+            results: # Results produced by the task
+              - description: The precise commit SHA fetched by this task
+                name: commit
+            workspaces: # Workspaces for storing and sharing data between steps
+              - name: source
+                description: The git repo will be cloned onto the volume backing this workspace
+            steps: # List of steps to be executed in the task
+              - name: clone # Step to clone the Git repository
+                image: alpine/git # Docker image to use for the step
+                script: | # Script to execute in the step
+                  # Check if the repository was previously cloned, if yes, delete the repo and clone a new one
+                  if [ -d "$(workspaces.source.path)/repo" ]; then
+                    rm -rf "$(workspaces.source.path)/repo" || exit 1
+                  fi
+                  # Clone git repo into the source workspace
+                  git clone $(params.url) $(workspaces.source.path)/repo
+                  cd $(workspaces.source.path)/repo
+                  # Save Git Commit's Short Sha and push it to the results
+                  RESULT_SHA="$(git rev-parse HEAD)"
+                  printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
+                  git checkout $(params.revision) # Checkout the specified revision
 
+          
+    ```
+    6b  create task to check if dockerfile exist in the path
+      ```
+      # task-check-dockerfile.yaml
+      apiVersion: tekton.dev/v1beta1
+      kind: Task
+      metadata:
+        name: check-dockerfile
+        namespace: tekton-cicd
+      spec:
+        params: []
+        workspaces:
+        - name: source
+          description: The workspace containing the cloned Git repository
+        steps:
+        - name: check-dockerfile
+          image: alpine/git
+          script: |
+            if [ -f "$(workspaces.source.path)/repo/Dockerfile" ]; then
+              echo "Dockerfile exists"
+            else
+              echo "Dockerfile does not exist"
+              exit 1
+            fi
+
+      ```
+    6c create task to build and push to our container registry using our secret created and also adding the namespace
+      ```
+      # API version and kind of the resource, indicating it's a Tekton Task
+              apiVersion: tekton.dev/v1beta1
+              kind: Task
+              metadata:
+                # Name and namespace of the Task
+                name: build-and-push-dockerfile
+                namespace: tekton-cicd
+              spec:
+                # Parameters that can be passed to this Task at runtime
+                params:
+                  - name: image-name
+                    type: string
+                    description: The name of the image to build and push
+                  - name: registry-url
+                    type: string
+                    description: The URL of the private Harbor registry
+                  - name: TAG
+                    default: latest
+                    type: string
+                results:
+                  - description: Digest of the image just built.  
+                    name: IMAGE_DIGEST
+                  - description: Created image
+                    name: IMAGE_URL
+                # Workspaces define shared storage between steps in a Task or among Tasks in a Pipeline
+                workspaces:
+                  - name: source
+                    description: The workspace containing the cloned Git repository for building
+
+                # Steps are a series of commands executed in a container as part of the Task
+                steps:
+                  - name: build-and-push
+                    # The container image for this step is the Kaniko executor, used for building and pushing Docker images
+                    image: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+                    env:
+                      # Sets the location where Kaniko expects to find Docker configuration files
+                      - name: DOCKER_CONFIG
+                        value: /kaniko/.docker
+                    command:
+                      # The Kaniko executor command and arguments for building and pushing the Docker image
+                      - /kaniko/executor
+                      - --insecure # Allows pushing to a non-TLS or an untrusted TLS registry
+                      - --skip-tls-verify # Skips TLS certificate verification
+                      - --dockerfile=/workspace/source/repo/Dockerfile # Specifies the path to the Dockerfile
+                      - --context=/workspace/source # Specifies the build context
+                      # This line is commented out but would specify the image destination using parameters for the registry URL and image name
+                      # - --destination=$(params.registry-url)/eth-project/$(params.image-name)
+                      - --destination=$(params.registry-url)/$(params.image-name):$(params.TAG)
+                      - --digest-file=$(results.IMAGE_DIGEST.path) # this line is very  important for tekton-chain to view the result from build to sign
+                    # Mounts a volume containing Docker configuration files necessary for pushing the image
+                    volumeMounts:
+                      - name: docker-config # The name of the volume to mount
+                        mountPath: /kaniko/.docker # The path in the container where the volume is mounted
+                  #step to print the built image uri and write the uri to ..very important for tekton-chain to pick up 
+                  - name: write-url
+                    image: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+                    script: |
+                      set -e
+                      image="$(params.registry-url)/$(params.image-name):$(params.TAG)"
+                      echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
+
+                # Defines volumes used by this Task
+                volumes:
+                  - name: docker-config # The name of the volume
+                    # This volume is backed by a Kubernetes secret containing Docker configuration for Kaniko
+                    secret:
+                      secretName: regcred # The name of the Kubernetes secret
+                      defaultMode: 256 # Sets the UNIX permissions for the files in the secret
+                      items:
+                      - key: .dockerconfigjson
+                        path: config.json
+      ```
+  
+7. Create the Pipeline that for the gitclone to push task
 ```
-#task-git-clone.yaml
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: git-clone
-  namespace: tekton-cicd
-spec:
-  params:
-  - name: url
-    type: string
-  - name: revision
-    type: string
-    default: main
-  workspaces:
-  - name: output
-    description: The git repo will be cloned onto the volume backing this workspace
-  steps:
-  - name: clone
-    image: alpine/git #git repo 
-    script: |
-      git clone $(params.url) $(workspaces.output.path)/repo
-      cd $(workspaces.output.path)/repo
-      git checkout $(params.revision)
-    
-```
-6. Create the Pipeline  that uses the git-clone task
-```
-# pipeline-git-clone.yaml
-apiVersion: tekton.dev/v1beta1
+ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: git-clone-pipeline
   namespace: tekton-cicd
 spec:
   params:
-  - name: git-url
-    type: string
-  - name: git-revision
-    type: string
-    default: main
+    - name: git-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: image-name
+      type: string
+      description: The name of the image to build and push
+    - name: registry-url
+      type: string
+      description: The URL of the private Harbor registry
   workspaces:
-  - name: shared-data
+    - name: shared-data
   tasks:
-  - name: fetch-repository
-    taskRef:  #Referencing the task
-      name: git-clone
-    params:
-    - name: url
-      value: $(params.git-url)
-    - name: revision
-      value: $(params.git-revision)
-    workspaces:
-    - name: output
-      workspace: shared-data
-
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: check-dockerfile
+      taskRef:
+        name: check-dockerfile
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: build-and-push-dockerfile
+      taskRef:
+        name: build-and-push-dockerfile
+      runAfter:
+        - check-dockerfile
+      params:
+        - name: image-name
+          value: $(params.image-name)
+        - name: registry-url
+          value: $(params.registry-url)
+        - name: TAG
+          value: $(tasks.fetch-repository.results.commit)
+      workspaces:
+        - name: source
+          workspace: shared-data
 ```
-7. Create the Pipleine run that triggers the pipeline(here we insert our values)
+8. Create the Pipleine run that triggers the pipeline(here we insert our values). and add the service account to it.
 ```
-# pipelinerun-git-clone.yaml
+# Define a PipelineRun resource to execute a Tekton pipeline
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: git-clone-pipeline-run
-  namespace: tekton-cicd
+  generateName: git-clone-pipeline-run # Generate a unique name for the PipelineRun
+  namespace: tekton-cicd # Specify the namespace where the PipelineRun will be created
 spec:
   pipelineRef:
-    name: git-clone-pipeline
+    name: git-clone-pipeline # Reference the Tekton Pipeline object to execute
+  serviceAccountName: pipeline-sign # Assign a service account to the PipelineRun for authentication
   params:
-  - name: git-url
-    value: our-git-repository-url
-  - name: git-revision
-    value: our-git-revision #branch to checkout:e.g main if not specified default is taken from the task level
+    - name: git-url
+      value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git" # Specify the URL of the Git repository to clone
+    - name: git-revision
+      value: main # Specify the branch or revision of the Git repository
+    - name: image-name
+      value: my-ethereum-app:latest # Specify the name of the image to build
+    - name: registry-url
+      value: "ethereum.gm-nig-ltd.tech/eth-project" # Specify the URL of the container registry to push the built image
   workspaces:
-  - name: shared-data
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: tektonpvc # Specify the name of the PersistentVolumeClaim to be used as a workspace
+
+
 
 ```
-8. It is important to note the pvc bound to the namespace , that is where the cloned repo would be stored for the subsequent tasks
+9. It is important to note the pvc bound to the namespace , that is where the cloned repo would be stored for the subsequent tasks in our case tektonpvc(important to create pvc and bound to the workspace as hsown above)
 ```
 k get pvc -n tekton-cicd
 ```
@@ -204,29 +342,28 @@ kubectl create secret generic signing-secrets \
   --from-literal=cosign-password='your password' \
   --namespace=tekton-chains
 
+Configuring Tekton Chains
+You’ll need to make these changes to the Tekton Chains Config:
 ```
-Next we need to modify configmap in tektonchain namespace to produce intoto format(slsa recognized format) used in generating provenance doc and store in the specified oci and tekton
+artifacts.taskrun.format=slsa/v1
+artifacts.taskrun.storage=oci
+artifacts.oci.storage=oci
+transparency.enabled=true
 ```
-kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.format": "in-toto"}}'
-kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.storage": "oci,tekton"}}'
+To do this we need to run this patch on tekton-chains
+```
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.format": "slsa/v1"}}'
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.taskrun.storage": "oci"}}'
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.oci.storage": "oci"}}'
+kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"transparency.enabled": "true"}}'
 
-```
+10. this repository is very important to compare your kaniko task with or otheer task such as buildah
+    https://github.com/tektoncd/catalog/blob/main/task/
 
-Next we install sets of tekton buildpacks(template)tasks,pipleine  that helpt to build source into a container image using Cloud Native Buildpacks. To do that, it uses builders to run buildpacks against your application source.
+11. we can verify on the cluster if tekton-chain signed our image using the command
 ```
-#tasks
-kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.3/git-clone.yaml
-kubectl apply -f https://raw.githubusercontent.com/buildpacks/tekton-integration/main/task/buildpacks/0.4/buildpacks.yaml #tekton chain expect image url so we use this
-kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildpacks-phases/0.2/buildpacks-phases.yaml 
+tkn pr describe --last -o jsonpath='{.spec.params[?(@.name=="registry-url")].value}/{.spec.params[?(@.name=="image-name")].value}' -n tekton-cicd #this prints the last image url  pushed to harbor 
 
+crane ls #crane ls the printed imagename above lists the image tag, attestation for provenance and signed image 
+cosign verify --key k8s://tekton-chains/signing-secrets ethereum.gm-nig-ltd.tech/eth-project/my-ethereum-app(in our case)
 ```
-
-```
-#pipeline
-kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/pipeline/buildpacks/0.1/buildpacks.yaml
-
-```
-
-kubectl apply -f pipelinetest.yaml
-kubectl apply -f pipelinetestrun.yaml
-kubectl apply -f teksecret.yaml

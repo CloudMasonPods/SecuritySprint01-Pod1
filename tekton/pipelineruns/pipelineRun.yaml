@@ -1,20 +1,27 @@
-# pipelinerun-git-clone.yaml
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: git-clone-pipeline-run
+  name: git-clone-pipeline-run
   namespace: tekton-cicd
 spec:
   pipelineRef:
     name: git-clone-pipeline
+  # serviceAccountName: pipeline-sign #add the service account to the pipelinerun
   params:
     - name: git-url
       value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
     - name: git-revision
       value: main
     - name: image-name
-      value: eth-test-tekton
+      value: my-ethereum-app
+    - name: registry-url
+      value: "ethereum.gm-nig-ltd.tech/eth-project"
+      # value: "docker.io/chukwuka1488"
   workspaces:
     - name: shared-data
       persistentVolumeClaim:
-        claimName: tektonpvc  # Specify the name of your PVC here
+        claimName: tektonpvc
+  podTemplate:
+    imagePullSecrets:
+    - name: regcred
+ 

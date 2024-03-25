@@ -14,7 +14,14 @@ spec:
     - name: registry-url
       type: string
       description: The URL of the private Harbor registry
-
+    - name: TAG
+      default: latest
+      type: string
+  results:
+    - description: Digest of the image just built.  
+      name: IMAGE_DIGEST
+    - description: Created image
+      name: IMAGE_URL
   # Workspaces define shared storage between steps in a Task or among Tasks in a Pipeline
   workspaces:
     - name: source
@@ -24,7 +31,7 @@ spec:
   steps:
     - name: build-and-push
       # The container image for this step is the Kaniko executor, used for building and pushing Docker images
-      image: gcr.io/kaniko-project/executor:latest
+      image: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
       env:
         # Sets the location where Kaniko expects to find Docker configuration files
         - name: DOCKER_CONFIG
@@ -32,24 +39,32 @@ spec:
       command:
         # The Kaniko executor command and arguments for building and pushing the Docker image
         - /kaniko/executor
-        - --insecure # Allows pushing to a non-TLS or an untrusted TLS registry
-        - --skip-tls-verify # Skips TLS certificate verification
+        # - --insecure # Allows pushing to a non-TLS or an untrusted TLS registry
+        # - --skip-tls-verify # Skips TLS certificate verification
         - --dockerfile=/workspace/source/repo/Dockerfile # Specifies the path to the Dockerfile
         - --context=/workspace/source # Specifies the build context
         # This line is commented out but would specify the image destination using parameters for the registry URL and image name
         # - --destination=$(params.registry-url)/eth-project/$(params.image-name)
-        - --destination=$(params.registry-url)/ethereum/$(params.image-name)
+        - --destination=$(params.registry-url)/$(params.image-name)
+        - --digest-file=$(results.IMAGE_DIGEST.path) # this line is very  important for tekton-chain to view the result from build to sign
       # Mounts a volume containing Docker configuration files necessary for pushing the image
       volumeMounts:
         - name: docker-config # The name of the volume to mount
           mountPath: /kaniko/.docker # The path in the container where the volume is mounted
+    #step to print the built image uri and write the uri to ..very important for tekton-chain to pick up image below  must be equal to destination values
+    - name: write-url
+      image: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
+      script: |
+        set -e
+        image="$(params.registry-url)/$(params.image-name)"
+        echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
 
   # Defines volumes used by this Task
   volumes:
     - name: docker-config # The name of the volume
       # This volume is backed by a Kubernetes secret containing Docker configuration for Kaniko
       secret:
-        secretName: harbor-secret # The name of the Kubernetes secret
+        secretName: regcred # The name of the Kubernetes secret
         defaultMode: 256 # Sets the UNIX permissions for the files in the secret
         items:
         - key: .dockerconfigjson
