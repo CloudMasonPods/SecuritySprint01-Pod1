@@ -1,0 +1,9 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-binding
+  namespace: tekton-cicd
+spec:
+  params:
+    - name: git_revision
+      value: $(body.ref) #  Example: refs/heads/main or refs/tags/v3.14.1

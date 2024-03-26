@@ -1,0 +1,26 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-listener
+  namespace: tekton-cicd
+spec:
+  serviceAccountName: tekton-triggers-eth # Service account created earlier on 
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: gitwebhooksecret # the secret we created earlier
+                secretKey: secretToken
+            - name: "eventTypes"
+              value: [ "push" ] # filter only push event
+      bindings:
+        - ref: github-binding # TriggerBinding created
+      template:
+        ref: github-trigger-template #the  TriggerTemplate
+  resources:
+    kubernetesResource:
+      serviceType: NodePort

@@ -44,8 +44,7 @@ spec:
         - --dockerfile=/workspace/source/repo/Dockerfile # Specifies the path to the Dockerfile
         - --context=/workspace/source # Specifies the build context
         # This line is commented out but would specify the image destination using parameters for the registry URL and image name
-        # - --destination=$(params.registry-url)/eth-project/$(params.image-name)
-        - --destination=$(params.registry-url)/$(params.image-name)
+        - --destination=$(params.registry-url)/$(params.image-name):$(params.TAG)
         - --digest-file=$(results.IMAGE_DIGEST.path) # this line is very  important for tekton-chain to view the result from build to sign
       # Mounts a volume containing Docker configuration files necessary for pushing the image
       volumeMounts:
@@ -56,7 +55,7 @@ spec:
       image: docker.io/library/bash:5.1.4@sha256:c523c636b722339f41b6a431b44588ab2f762c5de5ec3bd7964420ff982fb1d9
       script: |
         set -e
-        image="$(params.registry-url)/$(params.image-name)"
+        image="$(params.registry-url)/$(params.image-name):$(params.TAG)"
         echo -n "${image}" | tee "$(results.IMAGE_URL.path)"
 
   # Defines volumes used by this Task

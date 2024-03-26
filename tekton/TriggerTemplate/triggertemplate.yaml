@@ -1,0 +1,36 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-trigger-template
+  namespace: tekton-cicd
+spec:
+  params:
+    - name: git_revision #the git-revision from the triggerbinding we created earlier
+  resourcetemplates:
+      # the section below is exactly the same as writing a PipelineRun
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: git-clone-pipeline-run
+        namespace: tekton-cicd
+      spec:
+        pipelineRef:
+          name: git-clone-pipeline
+        # serviceAccountName: pipeline-sign #add the service account to the pipelinerun
+        params:
+          - name: git-url
+            value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+          - name: git-revision
+            value: main
+          - name: image-name
+            value: my-ethereum-app
+          - name: registry-url
+            value: "ethereum.gm-nig-ltd.tech/eth-project"
+            # value: "docker.io/chukwuka1488"
+        workspaces:
+          - name: shared-data
+            persistentVolumeClaim:
+              claimName: tektonpvc
+        podTemplate:
+          imagePullSecrets:
+          - name: regcred

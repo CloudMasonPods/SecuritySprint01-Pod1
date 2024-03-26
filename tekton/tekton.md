@@ -367,3 +367,189 @@ tkn pr describe --last -o jsonpath='{.spec.params[?(@.name=="registry-url")].val
 crane ls #crane ls the printed imagename above lists the image tag, attestation for provenance and signed image 
 cosign verify --key k8s://tekton-chains/signing-secrets ethereum.gm-nig-ltd.tech/eth-project/my-ethereum-app(in our case)
 ```
+## Harbor Trivy Trigger
+1. Go to the harbor registry UI and navigate to the project of interest
+2. After navigate to the configuration tab and enable Vulnerability scanning which Automatically scan images on push to the project registry
+
+## Tekton Trigger with push to our github repo
+prerequisite : An ingress-controller installed that can give us an external IP e.g nginx
+prerequisite : A github repo where we can create the webhook for the eventlistener(this allows for direct communication between github and tekton).
+prerequisite :Tekton pipeline running on your cluster
+The flow will be: (EventListener) detects git push event -> t will run the action (Trigger)->TriggerBinding will extract data from the event payload, to be used on TaskRun or PipelineRun(in our case pipelinerun)->TriggerTemplate specifies a blueprint for the resource, such as a TaskRun or PipelineRun(we would refer to our existing )
+
+1. Install Tekton triggers to the cluster
+```
+kubectl apply -f https://storage.googleapis.com/tekton-releases/triggers/previous/v0.15.1/release.yaml
+kubectl apply -f https://storage.googleapis.com/tekton-releases/triggers/previous/v0.15.1/interceptors.yaml #installing tekton trigger interceptors.e.g github,gitlab, bitbucket etc git interceptor etc this helps intercept payload sent from git when certain event are triggered by filtering for event such as push events      
+```
+
+2. Create a webhook secret to be used in creating webhook on github
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitWebhookSecret
+  namespace: your namespace
+type: Opaque
+stringData:
+  secretToken: "Desired secret"
+
+```
+
+3. Create the required rbac for the trigger actions(kubectl apply in the desired namespace if namespace not specified in definition)
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-triggers-eth
+  namespace: your-namespace-name
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: triggers-eth-eventlistener-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-eth
+    namespace: my-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: triggers-eth-eventlistener-clusterbinding
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-eth
+    namespace: my-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-clusterroles
+---
+
+```
+
+4. Create eventListener (EventListener processes an incoming request and executes a Trigger)and Trigger(A Trigger decides what to do with the received event) which utilize the github interceptor to listen to push events from github  :
+```
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: github-listener
+  namespace: tekton-cicd
+spec:
+  serviceAccountName: tekton-triggers-eth # Service account created earlier on 
+  triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: gitwebhooksecret # the secret we created earlier
+                secretKey: secretToken
+            - name: "eventTypes"
+              value: [ "push" ] # filter only push event
+      bindings:
+        - ref: github-binding # TriggerBinding
+      template:
+        ref: github-trigger-template #the  TriggerTemplate
+  resources:
+    kubernetesResource:
+      serviceType: NodePort
+
+
+```
+nb:GitHub Interceptor:The  interceptor we’re running is called github. It’s part of the core interceptors that we installed above. It makes sure that the request:
+- has a valid format for GitHub webhooks
+- matches a pre-defined secret (that we have set while setting the RBAC above)
+- matches the push event type
+The github interceptor requires a secret token. This token is set when creating the webhook in GitHub and will be validated by the github interceptor when the request arrives
+
+5. create trigger binding for  validating and modifying the incoming request, we need to extract values from it and bind them to variables that we can later use in our Pipeline
+```
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-binding
+spec:
+  params:
+    - name: git_revision
+      value: $(body.ref) #  Example: refs/heads/main or refs/tags/v3.14.1
+```
+
+6. Create Trigger template that refrence the pipelinerun to be trigger everytime there is an event
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: github-trigger-template
+  namespace: tekton-cicd
+spec:
+  params:
+    - name: git_revision #the git-revision from the triggerbinding we created earlier
+  resourcetemplates:
+      # the section below is exactly the same as writing a PipelineRun
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: git-clone-pipeline-run
+        namespace: tekton-cicd
+      spec:
+        pipelineRef:
+          name: git-clone-pipeline
+        # serviceAccountName: pipeline-sign #add the service account to the pipelinerun
+        params:
+          - name: git-url
+            value: "https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git"
+          - name: git-revision
+            value: main
+          - name: image-name
+            value: my-ethereum-app
+          - name: registry-url
+            value: "ethereum.gm-nig-ltd.tech/eth-project"
+            # value: "docker.io/chukwuka1488"
+        workspaces:
+          - name: shared-data
+            persistentVolumeClaim:
+              claimName: tektonpvc
+        podTemplate:
+          imagePullSecrets:
+          - name: regcred
+
+7. Create Ingress to be able to send a request to our event listener we need to expose it by creating an Ingress resource and pointing it to our event listener service:
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-resource
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /hooks
+            pathType: Exact
+            backend:
+              service:
+                name: el-github-listener #prefix el to the eventlistener name as eventlistener creates a service
+                port:
+                  number: 8080
+
+```
+nb: the service we are referencing here is the service the eventlistener creates which it prefix el to .It will use the port 8080, we can inspect the cluster for the svc :k get svc -n tekton-cicd
+
+8. Adding the webhook to our git repo, and add secret created above 
+  - navigate to github and click on settings.
+  - In settings select webhook and add webhooks
+  - Add Payload URL: Your external IP Address from the Ingress with the /hooks path: http://xxx.x.xxx.xxx/hooks
+  - Content type: application/json
+  - secret which would match the secret created above (in our case gitWebhookSecret)
+  - which events wull be trigger:just the push event
+
