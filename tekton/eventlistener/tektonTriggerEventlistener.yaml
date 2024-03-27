@@ -23,4 +23,4 @@ spec:
         ref: github-trigger-template #the  TriggerTemplate
   resources:
     kubernetesResource:
-      serviceType: NodePort
+      serviceType: NodePort # eventer listener service type
