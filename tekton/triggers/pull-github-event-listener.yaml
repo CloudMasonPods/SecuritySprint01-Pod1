@@ -1,0 +1,23 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: pull-github-event-listener
+  namespace: tekton-triggers
+spec:
+  serviceAccountName: tekton-pipelines
+  triggers:
+    - name: pr-trigger
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: git-webhook-secret
+                secretKey: secretToken
+        - cel:
+            filter: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: pull-github-webhook-binding
+      template:
+        ref: pull-github-webhook-template

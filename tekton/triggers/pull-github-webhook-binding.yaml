@@ -1,0 +1,9 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: pull-github-webhook-binding
+  namespace: tekton-triggers
+spec:
+  params:
+    - name: pr-number
+      value: $(body.number)
