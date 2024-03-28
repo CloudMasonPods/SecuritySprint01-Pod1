@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: push-github-webhook-template
+  namespace: tekton-triggers
+spec:
+  params:
+    - name: git-url
+      description: URL of the GitHub repository
+    - name: git-revision
+      description: Revision (branch, tag, commit) to build
+      default: "main"
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: push-pipeline-run-
+      spec:
+        pipelineRef:
+          name: your-push-pipeline # Replace with your push pipeline name
+        params:
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)

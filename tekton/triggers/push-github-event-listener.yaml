@@ -4,7 +4,7 @@ metadata:
   name: push-github-event-listener
   namespace: tekton-triggers
 spec:
-  serviceAccountName: tekton-pipelines
+  serviceAccountName: tekton-triggers
   triggers:
     - name: push-trigger
       interceptors:
