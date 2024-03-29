@@ -15,8 +15,13 @@ spec:
               value:
                 secretName: git-webhook-secret
                 secretKey: secretToken
-        - cel:
-            filter: "body.ref == 'refs/heads/main'"
+            - name: "eventTypes"
+              value: ["push"]
+        - ref:
+            name: cel
+          params:
+            - name: "filter"
+              value: "body.ref == 'refs/heads/main'"
       bindings:
         - ref: push-github-webhook-binding
       template:
