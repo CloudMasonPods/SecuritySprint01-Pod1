@@ -3,23 +3,35 @@ kind: Ingress
 metadata:
   name: argocd-ingress
   namespace: argocd
-  annotations:
-    kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
-    cert-manager.io/issuer: letsencrypt-prod  # Replace with your Cert-Manager issuer name
+#   annotations:
+#     kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
+#     cert-manager.io/issuer: letsencrypt-prod  # Replace with your Cert-Manager issuer name
+# spec:
+  annotations: 
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
+    # ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    # If you encounter a redirect loop or are getting a 307 response code
+    # then you need to force the nginx ingress to connect to the backend using HTTPS.
+    #
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
+  ingressClassName: nginx
   tls:
     - hosts:
-        - argo.gm-nig-ltd.tech  # Your desired DNS name
-      secretName: argocd-tls   # Secret name to store TLS certificate
+        - argomd.gm-nig-ltd.tech  # Your desired DNS name
+      secretName: argocd-server-tls   # Secret name to store TLS certificate
   rules:
-    - host: argocd.example.com   # Your desired DNS name
+    - host: argomd.gm-nig-ltd.tech    # Your desired DNS name
       http:
         paths:
           - pathType: Prefix
-            path: /argo-cd
+            path: /
             backend:
               service:
                 name: argocd-server
                 port:
-                  number: 443
+                  name: https
 
