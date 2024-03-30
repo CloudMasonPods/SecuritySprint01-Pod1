@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ethapp
+  namespace: argocd
+spec:
+  destination:
+    namespace: eth #namespace to create
+    server: 'https://kubernetes.default.svc'
+  source:
+    paths:  # Specify the required paths to track
+      - ethereum-deployment/ethereum-subchart  # Path to the ethereum-subchart folder
+      - ethereum-deployment/ethereum-ingress  # Path to the ethereum-ingress folder
+    repoURL: 'https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git'
+    targetRevision: HEAD
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true c#command to create namespace
