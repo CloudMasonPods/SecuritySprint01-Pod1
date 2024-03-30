@@ -7,41 +7,45 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 ### 2. Create an Ingress Resource
 
 Create a file named `argo-cd-ingress.yaml` with the following content:
-
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: argocd-ingress
+  name: argocd-server-ingress
   namespace: argocd
   annotations:
-    kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
-    cert-manager.io/issuer: <cert-manager-issuer-name>  # Replace with your Cert-Manager issuer name
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    # If you encounter a redirect loop or are getting a 307 response code
+    # then you need to force the nginx ingress to connect to the backend using HTTPS.
+    #
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
-  tls:
-    - hosts:
-        - argocd.gm-nig-ltd.tech  # Your desired DNS name
-      secretName: argocd-tls   # Secret name to store TLS certificate
+  ingressClassName: nginx
   rules:
-    - host: argocd.example.com   # Your desired DNS name
-      http:
-        paths:
-          - pathType: Prefix
-            path: /argo-cd
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  number: 443
+  - host: argocd.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              name: https
+  tls:
+  - hosts:
+    - argocd.example.com
+    secretName: argocd-server-tls # as expected by argocd-server
 ```
 
 ```bash
 kubectl apply -f argo-cd-ingress.yaml
 ```
 
-### 3. Generate Secret
+### 3. Generate Secret : Automatically generated because we are using LetsEncrypt
 1. **Generate TLS Certificate**:
-   You can generate a TLS certificate using tools like Let's Encrypt, Certbot, OpenSSL, or your preferred certificate authority. The certificate should be issued for the desired DNS hostname (`argo.gm-nig-ltd.tech` in your case).
+   You can generate a TLS certificate using tools like LetsEncrypt, Certbot, OpenSSL, or your preferred certificate authority. The certificate should be issued for the desired DNS hostname (`argo.gm-nig-ltd.tech` in your case).
 
 2. **Create Kubernetes Secret**:
    Once you have the TLS certificate and private key, create a Kubernetes Secret to store them. You can create the Secret using the `kubectl create secret tls` command, providing the certificate and key files as inputs:
