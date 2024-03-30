@@ -130,6 +130,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "ethapp-ethstats-test-connection"
+  namespace: {{ .Values.namespace }}
   labels:
     helm.sh/chart: ethstats-0.1.4
     app.kubernetes.io/name: ethstats
