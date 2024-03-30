@@ -5,10 +5,10 @@ metadata:
   namespace: argocd
 spec:
   destination:
-    namespace: eth #namespace to create
+    namespace: eth #namespace to monitor 
     server: 'https://kubernetes.default.svc'
   source:
-    path: ethereum-deployment # Specify the required path to track in this case the folder with subchart and ingress
+    path: ethereum-deployment/ethereum-subchart # Specify the required path to track in this case the folder with subchart and ingress
     repoURL: 'https://github.com/CloudMasonPods/SecuritySprint01-Pod1.git'
     targetRevision: HEAD
   project: default
