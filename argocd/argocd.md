@@ -122,7 +122,14 @@ Nb: the helm file should contain value.yanl(here we specify the namespace we wan
 ```
  helm template ethapp ethereum-helm-charts/ethstats -f /Users/Moyo/Desktop/secure-sc/SecuritySprint01-Pod1/ethereum-deployment/ethereum-subchart/values.yaml > path to values.yaml templates/template.yaml
 ```
-### 11. we can check from the argo cli the state of our app
+
+### 12. first we need to login to our instance of argocd
 ```
-argocd app list
+argocd login our argocd url --username username --password password
 ```
+
+### 12. we can check from the argo cli the state of our argocd app rendering
+```
+argocd app list  --server argocd url
+```
+
