@@ -4,6 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ethapp-ethstats
+  namespace: {{ .Values.namespace }}
   labels:
     helm.sh/chart: ethstats-0.1.4
     app.kubernetes.io/name: ethstats
@@ -16,6 +17,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ethapp-ethstats-env
+  namespace: {{ .Values.namespace }}
   labels:
     helm.sh/chart: ethstats-0.1.4
     app.kubernetes.io/name: ethstats
@@ -29,6 +31,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ethapp-ethstats
+  namespace: {{ .Values.namespace }}
+  namespace: 
   labels:
     helm.sh/chart: ethstats-0.1.4
     app.kubernetes.io/name: ethstats
@@ -50,6 +54,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ethapp-ethstats
+  namespace: {{ .Values.namespace }}
   labels:
     helm.sh/chart: ethstats-0.1.4
     app.kubernetes.io/name: ethstats
@@ -145,7 +150,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ethereumArgo
-  namespace: eth
+  namespace: {{ .Values.namespace }}
   annotations: 
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect

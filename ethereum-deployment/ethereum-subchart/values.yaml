@@ -1,6 +1,9 @@
 # -- Overrides the chart's name
 nameOverride: ""
 
+#namespace
+namespace: eth
+
 # -- Overrides the chart's computed fullname
 fullnameOverride: ""
 
