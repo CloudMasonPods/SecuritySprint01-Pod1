@@ -3,7 +3,7 @@ kind: PipelineRun
 metadata:
   labels:
     tekton.dev/pipeline: image-build
-  name: image-build-demo-2
+  generateName: image-build-demo-2
   namespace: tektest
 spec:
   pipelineRef:

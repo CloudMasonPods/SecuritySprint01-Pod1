@@ -44,8 +44,8 @@ spec:
                         # Specify the public key used for attestation
                         publicKeys: |-
                           -----BEGIN PUBLIC KEY-----
-                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEahhd+8EkNBaRExZ8YT14oI/3X04t
-                          IQHVCDs0FRcGdnZjAPBJbGaICiST2Ii60sjq0GKd9F/Wdg27oEud1eTIaw==
+                          MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtjELoRp1yfKReSuOZLJ/9LG3HeEJ
+                          xr5LNr5bMX03vcxDYzrlWC7XXnIdNb5NqR2f/3FUMtT4rhwRD0TZmlYJsQ==
                           -----END PUBLIC KEY-----
     # Rule enforcing Docker image signature
     # - name: enforce-image-signature
