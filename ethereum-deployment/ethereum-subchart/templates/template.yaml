@@ -10,7 +10,6 @@ metadata:
     app.kubernetes.io/name: ethstats
     app.kubernetes.io/instance: ethapp
     app.kubernetes.io/managed-by: Helm
-  namespace: default
 ---
 # Source: ethstats/templates/secret.yaml
 apiVersion: v1
