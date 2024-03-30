@@ -1,53 +1,29 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: argocd-ingress
+  name: argocd-server-ingress
   namespace: argocd
-<<<<<<< HEAD
   annotations:
-    # kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
-    cert-manager.io/issuer: letsencrypt-prod  # Replace with your Cert-Manager issuer name
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
-    ingress.kubernetes.io/ssl-redirect: "true"
-=======
-#   annotations:
-#     kubernetes.io/ingress.class: nginx   # Adjust if you are using a different ingress controller
-#     cert-manager.io/issuer: letsencrypt-prod  # Replace with your Cert-Manager issuer name
-# spec:
-  annotations: 
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
-    # ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     # If you encounter a redirect loop or are getting a 307 response code
     # then you need to force the nginx ingress to connect to the backend using HTTPS.
     #
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
->>>>>>> edc1233046358b151c1cdbd0f34f3969d551c58a
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - argomd.gm-nig-ltd.tech  # Your desired DNS name
-      secretName: argocd-server-tls   # Secret name to store TLS certificate
   rules:
-<<<<<<< HEAD
-    - host: argo.gm-nig-ltd.tech   # Your desired DNS name
-=======
-    - host: argomd.gm-nig-ltd.tech    # Your desired DNS name
->>>>>>> edc1233046358b151c1cdbd0f34f3969d551c58a
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: argocd-server
-                port:
-<<<<<<< HEAD
-                  number: 80
-=======
-                  name: https
->>>>>>> edc1233046358b151c1cdbd0f34f3969d551c58a
-
+  - host: argocd.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              name: https
+  tls:
+  - hosts:
+    - argocd.example.com
+    secretName: argocd-server-tls # as expected by argocd-server
