@@ -1,0 +1,170 @@
+---
+# Source: ethstats/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ethapp-ethstats
+  labels:
+    helm.sh/chart: ethstats-0.1.4
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+---
+# Source: ethstats/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ethapp-ethstats-env
+  labels:
+    helm.sh/chart: ethstats-0.1.4
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+    app.kubernetes.io/managed-by: Helm
+data:
+  WS_SECRET: UGxlYXNlQ2hhbmdlVGhpc0V0aHN0YXRzU2VjcmV0
+---
+# Source: ethstats/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethapp-ethstats
+  labels:
+    helm.sh/chart: ethstats-0.1.4
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+---
+# Source: ethstats/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ethapp-ethstats
+  labels:
+    helm.sh/chart: ethstats-0.1.4
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    {}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ethstats
+      app.kubernetes.io/instance: ethapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ethstats
+        app.kubernetes.io/instance: ethapp
+      annotations:
+        checksum/secrets: 1e371b90b535dbcc0c28416100d4b4d28824a6a60b7178d32ee17fe4ce837861
+    spec:
+      serviceAccountName: ethapp-ethstats
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      initContainers:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: ethstats
+          image: "ethereum.gm-nig-ltd.tech/eth-project/my-ethereum-app:latest"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {}
+          volumeMounts:
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 120
+            tcpSocket:
+              port: http
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            tcpSocket:
+              port: http
+          resources:
+            {}
+          env:
+            - name: WS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ethapp-ethstats-env
+                  key: WS_SECRET
+      nodeSelector:
+        {}
+      affinity:
+        {}
+      tolerations:
+        []
+      topologySpreadConstraints:
+        []
+      terminationGracePeriodSeconds: 30
+      volumes:
+---
+# Source: ethstats/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "ethapp-ethstats-test-connection"
+  labels:
+    helm.sh/chart: ethstats-0.1.4
+    app.kubernetes.io/name: ethstats
+    app.kubernetes.io/instance: ethapp
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl
+      command: ['curl']
+      args:
+       - 'ethapp-ethstats:3000/'
+  restartPolicy: Never
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ethereumArgo
+  namespace: eth
+  annotations: 
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"  #enable SSL redirect
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ethblockargo.gm-nig-ltd.tech
+    secretName: ethblockargo-tls-ingress # automatically generated and becomes the certificate name
+  rules:
+  - host: ethblockargo.gm-nig-ltd.tech
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ethapp-ethstats
+            port:
+              number: 3000  # port pointing to the port on the service and not the targetPort
+              
